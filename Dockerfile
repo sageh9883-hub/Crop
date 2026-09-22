@@ -6,7 +6,7 @@ ENV ANDROID_HOME=/opt/android-sdk
 ENV PATH=/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
 
 # ============================================================
-# SYSTEM DEPENDENCIES
+# DEPENDENCIES
 # ============================================================
 
 RUN apt-get update && apt-get install -y \
@@ -18,9 +18,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
     bash \
-    grep \
-    sed \
-    awk \
     && rm -rf /var/lib/apt/lists/*
 
 # ============================================================
@@ -30,40 +27,34 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools
 
 RUN wget -q \
-    https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
+    https://dl.google.com/android/repository/commandlinetools-linux-15859902_latest.zip \
     -O /tmp/cmdline-tools.zip \
     && unzip -q /tmp/cmdline-tools.zip \
        -d ${ANDROID_SDK_ROOT}/cmdline-tools \
     && mv \
        ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools \
        ${ANDROID_SDK_ROOT}/cmdline-tools/latest \
-    && rm /tmp/cmdline-tools.zip
+    && rm -f /tmp/cmdline-tools.zip
 
 # ============================================================
-# ACCEPT ANDROID LICENSES
+# LICENSES
 # ============================================================
 
 RUN yes | sdkmanager --licenses >/dev/null || true
 
 # ============================================================
-# FIND AND INSTALL ANDROID 17 / API 37
-# ============================================================
-# We do NOT hardcode a package name that may only exist
-# on a preview/beta SDK channel.
-#
-# We inspect all SDK channels and automatically select
-# the available API 37 platform and Build Tools 37.
+# ANDROID SDK 37
 # ============================================================
 
 RUN set -eux; \
     sdkmanager --list --channel=3 > /tmp/sdk-list; \
-    echo "===== API 37 PACKAGES FOUND ====="; \
+    echo "===== ANDROID 37 PACKAGES ====="; \
     grep -E 'platforms;android-37|build-tools;37' /tmp/sdk-list || true; \
-    echo "================================="; \
-    PLATFORM="$(grep -oE 'platforms;android-37(\.[0-9]+)?' /tmp/sdk-list | sort -Vu | tail -1)"; \
-    BUILD_TOOLS="$(grep -oE 'build-tools;37\.[0-9]+\.[0-9]+' /tmp/sdk-list | sort -Vu | tail -1)"; \
-    echo "Selected Android Platform: ${PLATFORM}"; \
-    echo "Selected Build Tools:      ${BUILD_TOOLS}"; \
+    echo "==============================="; \
+    PLATFORM="$(grep -oE 'platforms;android-37([.]?[0-9]+)?' /tmp/sdk-list | sort -V | tail -1)"; \
+    BUILD_TOOLS="$(grep -oE 'build-tools;37[.][0-9]+[.][0-9]+' /tmp/sdk-list | sort -V | tail -1)"; \
+    echo "Platform: ${PLATFORM}"; \
+    echo "Build Tools: ${BUILD_TOOLS}"; \
     test -n "${PLATFORM}"; \
     test -n "${BUILD_TOOLS}"; \
     yes | sdkmanager --channel=3 \
@@ -72,14 +63,10 @@ RUN set -eux; \
         "${BUILD_TOOLS}"
 
 # ============================================================
-# BUILDER DIRECTORY
+# BUILDER
 # ============================================================
 
 WORKDIR /builder
-
-# ============================================================
-# CLONE WEBVIEW APK TEMPLATE
-# ============================================================
 
 RUN git clone --depth 1 \
     https://github.com/xchacha20-poly1305/webview-apk-template.git \
@@ -109,7 +96,7 @@ ENV PORT=10000
 EXPOSE 10000
 
 # ============================================================
-# START API
+# START SERVER
 # ============================================================
 
 CMD ["node", "server.js"]
