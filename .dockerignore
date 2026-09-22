@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+.env
+*.apk
+*.aab
+*.jks
+*.keystore
+*.p12
+jobs
+builds
+README*
